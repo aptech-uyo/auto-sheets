@@ -1,0 +1,55 @@
+name: Run Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Cache Dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install Dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    needs: lint
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Cache Dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build

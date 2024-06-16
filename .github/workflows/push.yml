@@ -1,0 +1,43 @@
+name: Push GAS Project
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * SUN"
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    name: Push to scripts.google.com
+    steps:
+      - name: Fetch Repository
+        if: ${{ github.event_name != 'schedule' }}
+        uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: npm ci
+      - name: Write clasp Secret to Home Directory
+        run: echo "$CLASPRC_JSON_SECRET" >> ~/.clasprc.json
+        env:
+          CLASPRC_JSON_SECRET: ${{ secrets.CLASPRC_JSON }}
+      - name: Check clasp Login Status
+        run: npx clasp login --status
+      - name: Save Current clasp Secret to Environment Variable
+        run: |
+          echo ::add-mask::$(tr -d '\n\r' < ~/.clasprc.json)
+          echo "CLASPRC_JSON_FILE=$(tr -d '\n\r' < ~/.clasprc.json)" >> $GITHUB_ENV
+      - name: Save clasp Environment Variable to Repo Secret
+        if: ${{ env.CLASPRC_JSON_FILE != env.CLASPRC_JSON_SECRET }}
+        uses: hmanzur/actions-set-secret@v2.0.0
+        env:
+          CLASPRC_JSON_SECRET: ${{ secrets.CLASPRC_JSON }}
+        with:
+          name: "CLASPRC_JSON"
+          value: ${{ env.CLASPRC_JSON_FILE }}
+          repository: ${{ github.repository }}
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+      - name: Push Script to scripts.google.com
+        if: ${{ github.event_name != 'schedule' }}
+        run: npm run push
