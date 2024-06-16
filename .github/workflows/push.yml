@@ -14,7 +14,7 @@ jobs:
     name: Push to scripts.google.com
     steps:
       - name: Fetch Repository
-        if: ${{github.event_name != 'schedule' }}
+        if: ${{ github.event_name != 'schedule' }}
         uses: actions/checkout@v4
       - name: Install Dependencies
         run: npm ci
@@ -29,7 +29,7 @@ jobs:
           echo ::add-mask::$(tr -d '\n\r' < ~/.clasprc.json)
           echo "CLASPRC_JSON_FILE=$(tr -d '\n\r' < ~/.clasprc.json)" >> $GITHUB_ENV
       - name: Save clasp Environment Variable to Repo Secret
-        if: ${{ env.CLASPRC_JSON_FILE != env.CLASPRC_JSON_SECRET  }}
+        if: ${{ env.CLASPRC_JSON_FILE != env.CLASPRC_JSON_SECRET }}
         uses: hmanzur/actions-set-secret@v2.0.0
         env:
           CLASPRC_JSON_SECRET: ${{ secrets.CLASPRC_JSON }}
@@ -39,5 +39,5 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
       - name: Push Script to scripts.google.com
-        if: ${{ github.event_name	!= 'schedule'}}
-        run: npx clasp push -f
+        if: ${{ github.event_name != 'schedule' }}
+        run: npm run push
